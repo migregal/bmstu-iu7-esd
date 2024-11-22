@@ -16,6 +16,7 @@ impl DFS {
         opened_nodes: &mut Vec<Node>,
         closed_nodes: &mut HashSet<Node>,
         opened_rules: &mut Vec<Rule>,
+        closed_rules: &mut Vec<Rule>,
     ) -> (bool, bool) {
         let (mut have_children, mut solution_found) = (false, false);
 
@@ -34,7 +35,8 @@ impl DFS {
             opened_nodes.extend(rule.from().iter().filter(|x| !closed_nodes.contains(x)));
             if prev_len == opened_nodes.len() {
                 solution_found =
-                    DFS::label(to, opened_nodes, closed_nodes, opened_rules).is_some_and(|x| x);
+                    DFS::label(to, opened_nodes, closed_nodes, opened_rules, closed_rules)
+                        .is_some_and(|x| x);
             }
 
             break;
@@ -48,10 +50,12 @@ impl DFS {
         opened_nodes: &mut Vec<Node>,
         closed_nodes: &mut HashSet<Node>,
         opened_rules: &mut Vec<Rule>,
+        closed_rules: &mut Vec<Rule>,
     ) -> Option<bool> {
         loop {
-            let (_, node) = (opened_rules.pop()?, opened_nodes.pop()?);
+            let (rule, node) = (opened_rules.pop()?, opened_nodes.pop()?);
 
+            closed_rules.push(rule);
             closed_nodes.insert(node);
 
             if node == to {
@@ -92,6 +96,7 @@ impl Searcher for DFS {
         let (mut opened_nodes, mut closed_nodes) = (vec![to], HashSet::from_iter(from));
 
         let mut opened_rules = Vec::<Rule>::new();
+        let mut closed_rules = Vec::<Rule>::new();
 
         let mut mut_rules_list = rules.clone().to_owned();
         let (mut solution_found, mut have_children) = (false, true);
@@ -103,6 +108,7 @@ impl Searcher for DFS {
                 &mut opened_nodes,
                 &mut closed_nodes,
                 &mut opened_rules,
+                &mut closed_rules,
             );
 
             if solution_found {
@@ -126,6 +132,7 @@ impl Searcher for DFS {
         let mut nodes = Vec::from_iter(closed_nodes);
         nodes.sort_by_key(|x| x.number());
 
-        return (solution_found, mut_rules_list, nodes);
+        // return (solution_found, mut_rules_list, nodes);
+        return (solution_found, closed_rules, nodes);
     }
 }

@@ -55,6 +55,15 @@ fn process_graph(rule_list: Vec<Rule>, from: Vec<Node>, to: Node) {
     let searcher = dfs::DFS {};
 
     println!("Search with DFS:");
+
+    println!(
+        "  Input nodes: {}",
+        from.iter()
+            .map(|x| x.number().to_string())
+            .collect::<Vec<String>>()
+            .join(",")
+    );
+
     let (found, rules, nodes) = searcher.find_path(rule_list, from, to);
 
     if !found {
