@@ -6,11 +6,11 @@ enum TermType {
     VAR,
 }
 
-#[derive(Clone, Copy, PartialEq, Hash, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Hash, Eq)]
 pub struct Term {
     t: TermType,
     name: &'static str,
-    value: &'static str,
+    value: Option<&'static str>,
 }
 
 impl Term {
@@ -18,7 +18,7 @@ impl Term {
         return Term {
             t: TermType::VAR,
             name: name,
-            value: "",
+            value: None,
         };
     }
 
@@ -26,7 +26,7 @@ impl Term {
         return Term {
             t: TermType::CONST,
             name: "",
-            value: value,
+            value: Some(value),
         };
     }
 
@@ -34,20 +34,40 @@ impl Term {
         self.name
     }
 
-    pub fn value(&self) -> &str {
+    pub fn value(&self) -> Option<&str> {
         self.value
     }
 
-    pub fn unify(self, _other: Term) -> bool {
-        false
+    pub fn set_value(&mut self, value: &'static str) {
+        match self.t {
+            TermType::CONST => panic!("Can't assign value to const term"),
+            TermType::VAR => self.value = Some(value),
+        }
+    }
+
+    pub fn unify(&self, other: &Term) -> bool {
+        if self.value().as_deref() != other.value().as_deref() {
+            return false
+        }
+
+        true
     }
 }
 
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.t {
-            TermType::CONST => write!(f, "Const({})", self.name()),
-            TermType::VAR => write!(f, "Var({}, {})", self.name(), self.value()),
+            TermType::CONST => write!(f, "Const({})", self.value().unwrap()),
+            TermType::VAR => write!(f, "Var({}, {})", self.name(), self.value().unwrap_or("None")),
+        }
+    }
+}
+
+impl fmt::Debug for Term {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.t {
+            TermType::CONST => write!(f, "Const({})", self.value().unwrap()),
+            TermType::VAR => write!(f, "Var({}, {})", self.name(), self.value().unwrap_or("None")),
         }
     }
 }

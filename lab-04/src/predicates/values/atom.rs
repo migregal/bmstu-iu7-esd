@@ -29,13 +29,28 @@ impl Atom {
         self.name
     }
 
-    pub fn unify(&self, _other: Atom) -> bool {
+    pub fn is_neg(&self) -> bool {
+        self.is_neg
+    }
+
+    pub fn unify(&self, other: Atom) -> bool {
+        if self.name() != other.name()
+            || self.terms.len() != other.terms.len()
+            || self.is_neg != other.is_neg
+        {
+            return false;
+        }
+
+        for term in self.terms.iter().zip(other.terms.iter()) {
+            println!("{:?}={}", term, term.0.unify(term.1))
+        }
+
         false
     }
 }
 
 impl fmt::Display for Atom {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Atom({})", self.name())
+        write!(f, "Atom({}: {:?})", self.name(), self.terms)
     }
 }
