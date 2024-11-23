@@ -6,11 +6,11 @@ pub enum TermType {
     Var,
 }
 
-#[derive(Clone, Copy, PartialEq, Hash, Eq)]
+#[derive(Clone, PartialEq, Hash, Eq)]
 pub struct Term {
     t: TermType,
     name: &'static str,
-    value: Option<&'static str>,
+    value: Option<String>,
 }
 
 impl Term {
@@ -26,7 +26,7 @@ impl Term {
         return Term {
             t: TermType::Const,
             name: value,
-            value: Some(value),
+            value: Some(value.to_string()),
         };
     }
 
@@ -34,15 +34,15 @@ impl Term {
         self.t
     }
 
-    pub fn name(&self) -> &str {
-        self.name
+    pub fn name(&self) -> String {
+        self.name.to_string()
     }
 
-    pub fn value(&self) -> Option<&str> {
-        self.value
+    pub fn value(&self) -> Option<String> {
+        self.value.clone()
     }
 
-    pub fn set_value(&mut self, value: &'static str) {
+    pub fn set_value(&mut self, value: String) {
         match self.t {
             TermType::Const => panic!("Can't assign value to const term"),
             TermType::Var => self.value = Some(value),
@@ -62,8 +62,10 @@ pub fn unify(this: Term, other: Term) -> bool {
             TermType::Const => this
                 .value()
                 .is_none_or(|x| this.value().is_some_and(|y| x == y)),
-            TermType::Var => (this.value().is_none() && other.value().is_none())
-                || this.value().as_deref() != other.value().as_deref(),
+            TermType::Var => {
+                (this.value().is_none() && other.value().is_none())
+                    || this.value().as_deref() != other.value().as_deref()
+            }
         },
     }
 }
@@ -76,7 +78,7 @@ impl fmt::Display for Term {
                 f,
                 "Var({}, {})",
                 self.name(),
-                self.value().unwrap_or("None")
+                self.value().unwrap_or("None".to_string())
             ),
         }
     }
@@ -90,7 +92,7 @@ impl fmt::Debug for Term {
                 f,
                 "Var({}, {})",
                 self.name(),
-                self.value().unwrap_or("None")
+                self.value().unwrap_or("None".to_string())
             ),
         }
     }

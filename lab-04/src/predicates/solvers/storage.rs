@@ -1,4 +1,4 @@
-use std::collections::{HashMap, LinkedList};
+use std::collections::{HashMap, HashSet, LinkedList};
 
 use crate::predicates::solvers;
 use crate::predicates::values::{atom, term};
@@ -7,7 +7,7 @@ use crate::predicates::values::{atom, term};
 struct TermInfo {
     term: term::Term,
 
-    linked_terms: LinkedList<String>,
+    linked_terms: HashSet<String>,
 }
 
 pub struct Storage {
@@ -35,7 +35,7 @@ impl Storage {
             key,
             TermInfo {
                 term: term,
-                linked_terms: LinkedList::new(),
+                linked_terms: HashSet::new(),
             },
         );
         true
@@ -53,10 +53,57 @@ impl Storage {
 
 impl solvers::TermsStorage for Storage {
     fn get_term(&self, name: String) -> term::Term {
-        return self.terms.get(&name).unwrap().term;
+        return self.terms.get(&name).unwrap().term.clone();
     }
 
     fn link_terms(&mut self, from: String, to: String) -> bool {
+        if !self.terms.contains_key(&from) || !self.terms.contains_key(&to) {
+            return false;
+        }
+
+        // we just checked, that there are some values.
+        let (mut a, mut b) = (
+            self.terms.remove(&from).unwrap(),
+            self.terms.remove(&to).unwrap(),
+        );
+
+        match a.term.t() {
+            term::TermType::Const => {
+                match b.term.t() {
+                    // this means, that consts are the same
+                    term::TermType::Const => {}
+                    term::TermType::Var => b.term.set_value(a.term.value().unwrap().to_string()),
+                }
+            }
+            term::TermType::Var => match b.term.t() {
+                term::TermType::Const => a.term.set_value(b.term.value().unwrap().to_string()),
+                term::TermType::Var => {
+                    let (a_name, b_name) = (a.term.value().unwrap(), b.term.value().unwrap());
+
+                    let linked_terms: HashSet<String> = a
+                        .linked_terms
+                        .union(&b.linked_terms)
+                        .map(|x| x.to_string())
+                        .collect();
+
+                    a.linked_terms = linked_terms
+                        .clone()
+                        .into_iter()
+                        .filter(|x| *x != a_name)
+                        .collect();
+                    a.linked_terms.insert(b_name.clone());
+
+                    b.linked_terms = linked_terms.into_iter().filter(|x| *x != b_name).collect();
+                    b.linked_terms.insert(a_name);
+                }
+            },
+        }
+
+        println!("{:?} {:?}", a, b);
+
+        self.terms.insert(from, a.clone());
+        self.terms.insert(to, b.clone());
+
         true
     }
 

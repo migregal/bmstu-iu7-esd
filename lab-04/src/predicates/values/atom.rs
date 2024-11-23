@@ -1,3 +1,4 @@
+use std::collections::LinkedList;
 use std::fmt;
 
 use crate::predicates::solvers;
@@ -45,19 +46,26 @@ pub fn unify(storage: &dyn solvers::TermsStorage, this: Atom, other: Atom) -> bo
         return false;
     }
 
-    for term in this
+    let mut commands = LinkedList::<Box<dyn solvers::LinkTermsCommand>>::new();
+
+    for tuple in this
         .terms
         .iter()
         .map(|t| storage.get_term(t.to_string()))
         .zip(other.terms.iter().map(|t| storage.get_term(t.to_string())))
     {
-        let unified = term::unify(term.0, term.1);
-        println!("{:?}={}", term, unified);
+        let t2 = tuple.clone();
+        let unified = term::unify(tuple.0, tuple.1);
+        println!("{:?}={}", t2, unified);
 
         if !unified {
             return false;
         }
+
+        commands.push_back(storage.get_link_cmd(t2.0.name(), t2.0.name()).unwrap());
     }
+
+    // commands.iter().for_each(|c| c.run(storage));
 
     false
 }
