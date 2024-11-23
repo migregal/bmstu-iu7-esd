@@ -1,27 +1,26 @@
 use std::fmt;
 
-use super::term::Term;
-
+#[derive(Clone)]
 pub struct Atom {
     name: &'static str,
     is_neg: bool,
-    terms: Vec<Term>,
+    terms: Vec<String>,
 }
 
 impl Atom {
-    pub fn new(name: &'static str, terms: Vec<Term>) -> Atom {
+    pub fn new(name: &'static str, terms: Vec<&str>) -> Atom {
         return Atom {
             name: name,
             is_neg: false,
-            terms: terms,
+            terms: terms.iter().map(|x| x.to_string()).collect(),
         };
     }
 
-    pub fn new_negative(name: &'static str, terms: Vec<Term>) -> Atom {
+    pub fn new_negative(name: &'static str, terms: Vec<&str>) -> Atom {
         return Atom {
             name: name,
             is_neg: true,
-            terms: terms,
+            terms: terms.iter().map(|x| x.to_string()).collect(),
         };
     }
 
@@ -42,7 +41,8 @@ impl Atom {
         }
 
         for term in self.terms.iter().zip(other.terms.iter()) {
-            println!("{:?}={}", term, term.0.unify(term.1))
+            println!("{:?}", term)
+            // println!("{:?}={}", term, term.0.unify(term.1))
         }
 
         false

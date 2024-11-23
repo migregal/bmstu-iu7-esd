@@ -1,32 +1,49 @@
 pub mod predicates;
 
+use predicates::solvers::{storage, unification};
 use predicates::values::{atom::Atom, term::Term};
 
 fn main() {
-    let x1 = Term::new_var("x1");
+    let mut storage = storage::Storage::new();
 
-    let (_atom1, _atom2) = (Atom::new("S", vec![x1]), Atom::new("M", vec![x1]));
+    storage.add_term(Term::new_var("x1"));
 
-    let x2 = Term::new_var("x2");
-    let _atom3 = Atom::new_negative("M", vec![x2]);
+    storage.add_atom(Atom::new("S", vec!["x1"]));
+    storage.add_atom(Atom::new("M", vec!["x1"]));
 
-    let rain = Term::new_const("RAIN");
-    let _atom4 = Atom::new_negative("L", vec![x2, rain]);
+    storage.add_term(Term::new_var("x2"));
+    storage.add_atom(Atom::new_negative("M", vec!["x2"]));
 
-    let x3 = Term::new_var("x3");
-    let _atom5 = Atom::new_negative("S", vec![x3]);
+    storage.add_term(Term::new_const("RAIN"));
 
-    let snow = Term::new_const("SNOW");
-    let _atom6 = Atom::new_negative("L", vec![x3, snow]);
+    storage.add_atom(Atom::new_negative("L", vec!["x2", "RAIN"]));
 
-    let (y1, y2) = (Term::new_var("y1"), Term::new_var("y2"));
+    storage.add_term(Term::new_var("x3"));
 
-    let (lena, petya) = (Term::new_const("LENA"), Term::new_const("PETYA"));
+    storage.add_atom(Atom::new_negative("S", vec!["x3"]));
 
-    let _atom7 = Atom::new_negative("L", vec![lena, y1]);
-    let _atom8 = Atom::new_negative("L", vec![petya, y1]);
-    let _atom9 = Atom::new("L", vec![lena, y2]);
-    let _atom10 = Atom::new("L", vec![petya, y2]);
-    let _atom11 = Atom::new("L", vec![petya, rain]);
-    let _atom12 = Atom::new("L", vec![petya, snow]);
+    storage.add_term(Term::new_const("SNOW"));
+
+    storage.add_atom(Atom::new_negative("L", vec!["x3", "SNOW"]));
+
+    storage.add_term(Term::new_var("y1"));
+    storage.add_term(Term::new_var("y2"));
+
+    storage.add_term(Term::new_const("LENA"));
+    storage.add_term(Term::new_const("PETYA"));
+
+    storage.add_atom(Atom::new_negative("L", vec!["LENA", "y1"]));
+    storage.add_atom(Atom::new_negative("L", vec!["PETYA", "y1"]));
+
+    storage.add_atom(Atom::new("L", vec!["LENA", "y2"]));
+    storage.add_atom(Atom::new("L", vec!["PETYA", "y2"]));
+    storage.add_atom(Atom::new("L", vec!["PETYA", "RAIN"]));
+    storage.add_atom(Atom::new("L", vec!["PETYA", "SNOW"]));
+
+    let solver = unification::Solver::new(storage);
+
+    solver.solve(
+        Atom::new("L", vec!["x1", "x2"]),
+        Atom::new("L", vec!["PETYA", "y1"]),
+    );
 }
