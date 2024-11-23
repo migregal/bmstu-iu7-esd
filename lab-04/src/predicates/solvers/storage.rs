@@ -1,9 +1,17 @@
 use std::collections::{HashMap, LinkedList};
 
+use crate::predicates::solvers;
 use crate::predicates::values::{atom, term};
 
+#[derive(Clone, Debug)]
+struct TermInfo {
+    term: term::Term,
+
+    linked_terms: LinkedList<String>,
+}
+
 pub struct Storage {
-    terms: HashMap<String, LinkedList<term::Term>>,
+    terms: HashMap<String, TermInfo>,
 
     atoms: HashMap<String, LinkedList<atom::Atom>>,
 }
@@ -23,7 +31,13 @@ impl Storage {
             return false;
         }
 
-        self.terms.insert(key, LinkedList::new());
+        self.terms.insert(
+            key,
+            TermInfo {
+                term: term,
+                linked_terms: LinkedList::new(),
+            },
+        );
         true
     }
 
@@ -35,8 +49,33 @@ impl Storage {
             None => _ = self.atoms.insert(key, LinkedList::from([atom])),
         }
     }
+}
 
-    pub fn solve(&self, a: atom::Atom, b: atom::Atom) -> bool {
-        return a.unify(b)
+impl solvers::TermsStorage for Storage {
+    fn get_term(&self, name: String) -> term::Term {
+        return self.terms.get(&name).unwrap().term;
+    }
+
+    fn link_terms(&mut self, from: String, to: String) -> bool {
+        true
+    }
+
+    fn get_link_cmd(&self, from: String, to: String) -> Option<Box<dyn solvers::LinkTermsCommand>> {
+        if !self.terms.contains_key(&from) || !self.terms.contains_key(&to) {
+            return None;
+        }
+
+        return Some(Box::new(LinkTermsCommand { from: from, to: to }));
+    }
+}
+
+struct LinkTermsCommand {
+    from: String,
+    to: String,
+}
+
+impl solvers::LinkTermsCommand for LinkTermsCommand {
+    fn run(&self, mut storage: Box<dyn solvers::TermsStorage>) {
+        storage.link_terms(self.from.clone(), self.to.clone());
     }
 }

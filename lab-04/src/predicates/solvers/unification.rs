@@ -12,6 +12,6 @@ impl Solver {
     }
 
     pub fn solve(&self, a: atom::Atom, b: atom::Atom) -> bool {
-        return a.unify(b);
+        return atom::unify(&self.storage, a, b);
     }
 }

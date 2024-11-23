@@ -1,6 +1,10 @@
 use std::fmt;
 
-#[derive(Clone)]
+use crate::predicates::solvers;
+
+use crate::predicates::values::term;
+
+#[derive(Clone, Debug)]
 pub struct Atom {
     name: &'static str,
     is_neg: bool,
@@ -31,22 +35,31 @@ impl Atom {
     pub fn is_neg(&self) -> bool {
         self.is_neg
     }
+}
 
-    pub fn unify(&self, other: Atom) -> bool {
-        if self.name() != other.name()
-            || self.terms.len() != other.terms.len()
-            || self.is_neg != other.is_neg
-        {
+pub fn unify(storage: &dyn solvers::TermsStorage, this: Atom, other: Atom) -> bool {
+    if this.name() != other.name()
+        || this.terms.len() != other.terms.len()
+        || this.is_neg != other.is_neg
+    {
+        return false;
+    }
+
+    for term in this
+        .terms
+        .iter()
+        .map(|t| storage.get_term(t.to_string()))
+        .zip(other.terms.iter().map(|t| storage.get_term(t.to_string())))
+    {
+        let unified = term::unify(term.0, term.1);
+        println!("{:?}={}", term, unified);
+
+        if !unified {
             return false;
         }
-
-        for term in self.terms.iter().zip(other.terms.iter()) {
-            println!("{:?}", term)
-            // println!("{:?}={}", term, term.0.unify(term.1))
-        }
-
-        false
     }
+
+    false
 }
 
 impl fmt::Display for Atom {

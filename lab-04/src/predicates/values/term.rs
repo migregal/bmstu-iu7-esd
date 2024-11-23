@@ -1,9 +1,9 @@
 use std::fmt;
 
 #[derive(Clone, Copy, PartialEq, Hash, Eq, Debug)]
-enum TermType {
-    CONST,
-    VAR,
+pub enum TermType {
+    Const,
+    Var,
 }
 
 #[derive(Clone, Copy, PartialEq, Hash, Eq)]
@@ -16,7 +16,7 @@ pub struct Term {
 impl Term {
     pub fn new_var(name: &'static str) -> Term {
         return Term {
-            t: TermType::VAR,
+            t: TermType::Var,
             name: name,
             value: None,
         };
@@ -24,10 +24,14 @@ impl Term {
 
     pub fn new_const(value: &'static str) -> Term {
         return Term {
-            t: TermType::CONST,
-            name: "",
+            t: TermType::Const,
+            name: value,
             value: Some(value),
         };
+    }
+
+    pub fn t(&self) -> TermType {
+        self.t
     }
 
     pub fn name(&self) -> &str {
@@ -40,25 +44,40 @@ impl Term {
 
     pub fn set_value(&mut self, value: &'static str) {
         match self.t {
-            TermType::CONST => panic!("Can't assign value to const term"),
-            TermType::VAR => self.value = Some(value),
+            TermType::Const => panic!("Can't assign value to const term"),
+            TermType::Var => self.value = Some(value),
         }
     }
+}
 
-    pub fn unify(&self, other: &Term) -> bool {
-        if self.value().as_deref() != other.value().as_deref() {
-            return false
-        }
-
-        true
+pub fn unify(this: Term, other: Term) -> bool {
+    match this.t {
+        TermType::Const => match other.t {
+            TermType::Const => this.value().as_deref() != other.value().as_deref(),
+            TermType::Var => other
+                .value()
+                .is_none_or(|x| this.value().is_some_and(|y| x == y)),
+        },
+        TermType::Var => match other.t {
+            TermType::Const => this
+                .value()
+                .is_none_or(|x| this.value().is_some_and(|y| x == y)),
+            TermType::Var => (this.value().is_none() && other.value().is_none())
+                || this.value().as_deref() != other.value().as_deref(),
+        },
     }
 }
 
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.t {
-            TermType::CONST => write!(f, "Const({})", self.value().unwrap()),
-            TermType::VAR => write!(f, "Var({}, {})", self.name(), self.value().unwrap_or("None")),
+            TermType::Const => write!(f, "Const({})", self.value().unwrap()),
+            TermType::Var => write!(
+                f,
+                "Var({}, {})",
+                self.name(),
+                self.value().unwrap_or("None")
+            ),
         }
     }
 }
@@ -66,8 +85,13 @@ impl fmt::Display for Term {
 impl fmt::Debug for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.t {
-            TermType::CONST => write!(f, "Const({})", self.value().unwrap()),
-            TermType::VAR => write!(f, "Var({}, {})", self.name(), self.value().unwrap_or("None")),
+            TermType::Const => write!(f, "Const({})", self.value().unwrap()),
+            TermType::Var => write!(
+                f,
+                "Var({}, {})",
+                self.name(),
+                self.value().unwrap_or("None")
+            ),
         }
     }
 }
