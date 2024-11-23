@@ -40,10 +40,12 @@ fn main() {
     storage.add_atom(Atom::new("L", vec!["PETYA", "RAIN"]));
     storage.add_atom(Atom::new("L", vec!["PETYA", "SNOW"]));
 
-    let solver = unification::Solver::new(storage);
+    let mut solver = unification::Solver::new(storage);
 
-    solver.solve(
+    let (a, b) = (
         Atom::new("L", vec!["x1", "x2"]),
         Atom::new("L", vec!["PETYA", "y1"]),
     );
+
+    let res = solver.solve(a.clone(), b.clone());
 }

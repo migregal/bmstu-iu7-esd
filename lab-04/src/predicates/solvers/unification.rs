@@ -8,10 +8,18 @@ pub struct Solver {
 
 impl Solver {
     pub fn new(storage: storage::Storage) -> Solver {
-        return Solver { storage };
+        return Solver {
+            storage: storage,
+        };
     }
 
-    pub fn solve(&self, a: atom::Atom, b: atom::Atom) -> bool {
-        return atom::unify(&self.storage, a, b);
+    pub fn solve(&mut self, a: atom::Atom, b: atom::Atom) -> bool {
+        self.storage.print_atoms(a.clone(), b.clone());
+
+        let res = atom::unify(&mut self.storage, a.clone(), b.clone());
+
+        self.storage.print_atoms(a, b);
+
+        res
     }
 }

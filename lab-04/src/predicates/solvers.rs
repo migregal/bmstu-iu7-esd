@@ -10,8 +10,10 @@ pub trait TermsStorage {
     fn link_terms(&mut self, from: String, to: String) -> bool;
 
     fn get_link_cmd(&self, from: String, to: String) -> Option<Box<dyn LinkTermsCommand>>;
+
+    fn apply_cmds(&mut self, cmds: Vec<Box<dyn LinkTermsCommand>>);
 }
 
 pub trait LinkTermsCommand {
-    fn run(&self, storage: Box<dyn TermsStorage>);
+    fn run(&self, storage: &mut dyn TermsStorage);
 }

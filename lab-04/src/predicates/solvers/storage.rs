@@ -1,14 +1,9 @@
+use std::fmt;
+
 use std::collections::{HashMap, HashSet, LinkedList};
 
 use crate::predicates::solvers;
 use crate::predicates::values::{atom, term};
-
-#[derive(Clone, Debug)]
-struct TermInfo {
-    term: term::Term,
-
-    linked_terms: HashSet<String>,
-}
 
 pub struct Storage {
     terms: HashMap<String, TermInfo>,
@@ -49,6 +44,24 @@ impl Storage {
             None => _ = self.atoms.insert(key, LinkedList::from([atom])),
         }
     }
+
+    pub fn print_atoms(&self, a: atom::Atom, b: atom::Atom) {
+        println!("Atoms:");
+        for i in vec![a, b].into_iter() {
+            println!(
+                "\t{}{}",
+                match i.is_neg() {
+                    true => "",
+                    false => "-",
+                },
+                i.name()
+            );
+
+            for t in i.terms().into_iter().map(|x| self.terms.get(&x).unwrap()) {
+                println!("\t\t{:?}", t)
+            }
+        }
+    }
 }
 
 impl solvers::TermsStorage for Storage {
@@ -60,6 +73,14 @@ impl solvers::TermsStorage for Storage {
         if !self.terms.contains_key(&from) || !self.terms.contains_key(&to) {
             return false;
         }
+
+        // println!(
+        //     "\n{} -> {}\n{:?} {:?}",
+        //     from,
+        //     to,
+        //     self.terms.get(&from),
+        //     self.terms.get(&to)
+        // );
 
         // we just checked, that there are some values.
         let (mut a, mut b) = (
@@ -78,8 +99,6 @@ impl solvers::TermsStorage for Storage {
             term::TermType::Var => match b.term.t() {
                 term::TermType::Const => a.term.set_value(b.term.value().unwrap().to_string()),
                 term::TermType::Var => {
-                    let (a_name, b_name) = (a.term.value().unwrap(), b.term.value().unwrap());
-
                     let linked_terms: HashSet<String> = a
                         .linked_terms
                         .union(&b.linked_terms)
@@ -89,17 +108,17 @@ impl solvers::TermsStorage for Storage {
                     a.linked_terms = linked_terms
                         .clone()
                         .into_iter()
-                        .filter(|x| *x != a_name)
+                        .filter(|x| *x != from)
                         .collect();
-                    a.linked_terms.insert(b_name.clone());
+                    a.linked_terms.insert(to.clone());
 
-                    b.linked_terms = linked_terms.into_iter().filter(|x| *x != b_name).collect();
-                    b.linked_terms.insert(a_name);
+                    b.linked_terms = linked_terms.into_iter().filter(|x| *x != to).collect();
+                    b.linked_terms.insert(from.clone());
                 }
             },
         }
 
-        println!("{:?} {:?}", a, b);
+        // println!("{:?} {:?}", a, b);
 
         self.terms.insert(from, a.clone());
         self.terms.insert(to, b.clone());
@@ -114,6 +133,10 @@ impl solvers::TermsStorage for Storage {
 
         return Some(Box::new(LinkTermsCommand { from: from, to: to }));
     }
+
+    fn apply_cmds(&mut self, cmds: Vec<Box<dyn solvers::LinkTermsCommand>>) {
+        cmds.into_iter().for_each(|c| c.run(self))
+    }
 }
 
 struct LinkTermsCommand {
@@ -122,7 +145,32 @@ struct LinkTermsCommand {
 }
 
 impl solvers::LinkTermsCommand for LinkTermsCommand {
-    fn run(&self, mut storage: Box<dyn solvers::TermsStorage>) {
+    fn run(&self, storage: &mut dyn solvers::TermsStorage) {
         storage.link_terms(self.from.clone(), self.to.clone());
+    }
+}
+
+#[derive(Clone)]
+struct TermInfo {
+    term: term::Term,
+
+    linked_terms: HashSet<String>,
+}
+
+impl fmt::Display for TermInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.term.t() {
+            term::TermType::Const => write!(f, "{}", self.term),
+            term::TermType::Var => write!(f, "{} {:?}", self.term, self.linked_terms),
+        }
+    }
+}
+
+impl fmt::Debug for TermInfo {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.term.t() {
+            term::TermType::Const => write!(f, "{}", self.term),
+            term::TermType::Var => write!(f, "{} {:?}", self.term, self.linked_terms),
+        }
     }
 }

@@ -1,4 +1,3 @@
-use std::collections::LinkedList;
 use std::fmt;
 
 use crate::predicates::solvers;
@@ -36,9 +35,13 @@ impl Atom {
     pub fn is_neg(&self) -> bool {
         self.is_neg
     }
+
+    pub fn terms(&self) -> Vec<String> {
+        self.terms.clone()
+    }
 }
 
-pub fn unify(storage: &dyn solvers::TermsStorage, this: Atom, other: Atom) -> bool {
+pub fn unify(storage: &mut dyn solvers::TermsStorage, this: Atom, other: Atom) -> bool {
     if this.name() != other.name()
         || this.terms.len() != other.terms.len()
         || this.is_neg != other.is_neg
@@ -46,7 +49,7 @@ pub fn unify(storage: &dyn solvers::TermsStorage, this: Atom, other: Atom) -> bo
         return false;
     }
 
-    let mut commands = LinkedList::<Box<dyn solvers::LinkTermsCommand>>::new();
+    let mut commands = Vec::<Box<dyn solvers::LinkTermsCommand>>::with_capacity(this.terms.len());
 
     for tuple in this
         .terms
@@ -62,12 +65,12 @@ pub fn unify(storage: &dyn solvers::TermsStorage, this: Atom, other: Atom) -> bo
             return false;
         }
 
-        commands.push_back(storage.get_link_cmd(t2.0.name(), t2.0.name()).unwrap());
+        commands.push(storage.get_link_cmd(t2.0.name(), t2.1.name()).unwrap());
     }
 
-    // commands.iter().for_each(|c| c.run(storage));
+    storage.apply_cmds(commands);
 
-    false
+    true
 }
 
 impl fmt::Display for Atom {
