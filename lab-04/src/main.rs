@@ -4,6 +4,19 @@ use predicates::solvers::{storage, unification};
 use predicates::values::{atom::Atom, term::Term};
 
 fn main() {
+    let storage = get_knowledge();
+
+    let mut solver = unification::Solver::new(storage);
+
+    let (a, b) = (
+        Atom::new("L", vec!["x1", "x2"]),
+        Atom::new("L", vec!["PETYA", "y1"]),
+    );
+
+    let res = solver.solve(a.clone(), b.clone());
+}
+
+fn get_knowledge() -> storage::Storage {
     let mut storage = storage::Storage::new();
 
     storage.add_term(Term::new_var("x1"));
@@ -40,12 +53,5 @@ fn main() {
     storage.add_atom(Atom::new("L", vec!["PETYA", "RAIN"]));
     storage.add_atom(Atom::new("L", vec!["PETYA", "SNOW"]));
 
-    let mut solver = unification::Solver::new(storage);
-
-    let (a, b) = (
-        Atom::new("L", vec!["x1", "x2"]),
-        Atom::new("L", vec!["PETYA", "y1"]),
-    );
-
-    let res = solver.solve(a.clone(), b.clone());
+    storage
 }
