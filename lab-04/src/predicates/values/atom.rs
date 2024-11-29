@@ -6,30 +6,30 @@ use crate::predicates::values::term;
 
 #[derive(Clone, Debug)]
 pub struct Atom {
-    name: &'static str,
+    name: String,
     is_neg: bool,
     terms: Vec<String>,
 }
 
 impl Atom {
-    pub fn new(name: &'static str, terms: Vec<&str>) -> Atom {
+    pub fn new(name: String, terms: Vec<String>) -> Atom {
         return Atom {
-            name: name,
+            name,
             is_neg: false,
-            terms: terms.iter().map(|x| x.to_string()).collect(),
+            terms,
         };
     }
 
-    pub fn new_negative(name: &'static str, terms: Vec<&str>) -> Atom {
+    pub fn new_negative(name: String, terms: Vec<String>) -> Atom {
         return Atom {
-            name: name,
+            name,
             is_neg: true,
-            terms: terms.iter().map(|x| x.to_string()).collect(),
+            terms,
         };
     }
 
     pub fn name(&self) -> &str {
-        self.name
+        self.name.as_str()
     }
 
     pub fn is_neg(&self) -> bool {
@@ -59,7 +59,7 @@ pub fn unify(storage: &mut dyn solvers::TermsStorage, this: Atom, other: Atom) -
     {
         let t2 = tuple.clone();
         let unified = term::unify(tuple.0, tuple.1);
-        println!("{:?}={}", t2, unified);
+        // println!("{:?}={}", t2, unified);
 
         if !unified {
             return false;

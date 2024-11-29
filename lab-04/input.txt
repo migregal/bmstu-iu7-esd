@@ -1,0 +1,8 @@
+L(Petya, Snow)
+L(Petya, Rain)
+S(x1) | ~M(x1)
+S(x2) | M(x2)
+~M(x3) | ~L(x3, Rain)
+~S(x4) | L(x4, Snow)
+~L(Лена, y1) | ~L(Petya, y1)
+~L(Лена, y2) | L(Petya, y2)

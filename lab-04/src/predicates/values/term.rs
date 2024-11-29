@@ -9,12 +9,12 @@ pub enum TermType {
 #[derive(Clone, PartialEq, Hash, Eq)]
 pub struct Term {
     t: TermType,
-    name: &'static str,
+    name: String,
     value: Option<String>,
 }
 
 impl Term {
-    pub fn new_var(name: &'static str) -> Term {
+    pub fn new_var(name: String) -> Term {
         return Term {
             t: TermType::Var,
             name: name,
@@ -22,11 +22,11 @@ impl Term {
         };
     }
 
-    pub fn new_const(value: &'static str) -> Term {
+    pub fn new_const(value: String) -> Term {
         return Term {
             t: TermType::Const,
-            name: value,
-            value: Some(value.to_string()),
+            name: value.clone(),
+            value: Some(value),
         };
     }
 

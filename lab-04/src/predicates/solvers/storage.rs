@@ -51,8 +51,8 @@ impl Storage {
             println!(
                 "\t{}{}",
                 match i.is_neg() {
-                    true => "",
-                    false => "-",
+                    true => "~",
+                    false => "",
                 },
                 i.name()
             );
@@ -131,7 +131,7 @@ impl solvers::TermsStorage for Storage {
             return None;
         }
 
-        return Some(Box::new(LinkTermsCommand { from: from, to: to }));
+        return Some(Box::new(LinkTermsCommand { from, to }));
     }
 
     fn apply_cmds(&mut self, cmds: Vec<Box<dyn solvers::LinkTermsCommand>>) {

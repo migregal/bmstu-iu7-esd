@@ -1,57 +1,82 @@
+use std::fs::File;
+use std::io::{self, BufRead};
+use std::path::Path;
+
+use capitalize::Capitalize;
+
 pub mod predicates;
 
 use predicates::solvers::{storage, unification};
-use predicates::values::{atom::Atom, term::Term};
+use predicates::values::{atom::Atom, term};
 
 fn main() {
-    let storage = get_knowledge();
+    let storage = get_knowledge("./input.txt");
 
     let mut solver = unification::Solver::new(storage);
 
     let (a, b) = (
-        Atom::new("L", vec!["x1", "x2"]),
-        Atom::new("L", vec!["PETYA", "y1"]),
+        Atom::new("L".to_string(), vec!["x1".to_string(), "x2".to_string()]),
+        Atom::new("L".to_string(), vec!["Petya".to_string(), "y1".to_string()]),
     );
 
-    let res = solver.solve(a.clone(), b.clone());
+    let res = solver.solve(a, b);
 }
 
-fn get_knowledge() -> storage::Storage {
+fn get_knowledge(fin: &str) -> storage::Storage {
     let mut storage = storage::Storage::new();
 
-    storage.add_term(Term::new_var("x1"));
+    if let Ok(lines) = read_lines(fin) {
+        for line in lines.flatten().into_iter() {
+            let exprs = line
+                .split("|")
+                .map(|s| s.to_string().trim().to_string())
+                .into_iter();
 
-    storage.add_atom(Atom::new("S", vec!["x1"]));
-    storage.add_atom(Atom::new("M", vec!["x1"]));
+            for mut expr in exprs {
+                let is_neg = expr.starts_with("~");
+                if is_neg {
+                    expr.remove(0);
+                }
 
-    storage.add_term(Term::new_var("x2"));
-    storage.add_atom(Atom::new_negative("M", vec!["x2"]));
+                let parts = expr.split(&['(', ')'][..]).collect::<Vec<&str>>();
+                let name = parts[0].to_string();
 
-    storage.add_term(Term::new_const("RAIN"));
+                let mut terms = Vec::new();
+                if parts[1].len() > 0 {
+                    terms.extend(
+                        parts[1]
+                            .split(",")
+                            .map(|s| s.to_string().trim().to_string())
+                            .collect::<Vec<String>>(),
+                    );
+                }
 
-    storage.add_atom(Atom::new_negative("L", vec!["x2", "RAIN"]));
+                for term in terms.clone().into_iter() {
+                    if term.capitalize() == term {
+                        storage.add_term(term::Term::new_const(term));
+                    } else {
+                        storage.add_term(term::Term::new_var(term));
+                    }
+                }
 
-    storage.add_term(Term::new_var("x3"));
-
-    storage.add_atom(Atom::new_negative("S", vec!["x3"]));
-
-    storage.add_term(Term::new_const("SNOW"));
-
-    storage.add_atom(Atom::new_negative("L", vec!["x3", "SNOW"]));
-
-    storage.add_term(Term::new_var("y1"));
-    storage.add_term(Term::new_var("y2"));
-
-    storage.add_term(Term::new_const("LENA"));
-    storage.add_term(Term::new_const("PETYA"));
-
-    storage.add_atom(Atom::new_negative("L", vec!["LENA", "y1"]));
-    storage.add_atom(Atom::new_negative("L", vec!["PETYA", "y1"]));
-
-    storage.add_atom(Atom::new("L", vec!["LENA", "y2"]));
-    storage.add_atom(Atom::new("L", vec!["PETYA", "y2"]));
-    storage.add_atom(Atom::new("L", vec!["PETYA", "RAIN"]));
-    storage.add_atom(Atom::new("L", vec!["PETYA", "SNOW"]));
+                if is_neg {
+                    storage.add_atom(Atom::new_negative(name, terms));
+                } else {
+                    storage.add_atom(Atom::new(name, terms));
+                }
+            }
+        }
+    }
 
     storage
+}
+
+// The output is wrapped in a Result to allow matching on errors.
+// Returns an Iterator to the Reader of the lines of the file.
+fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+where
+    P: AsRef<Path>,
+{
+    let file = File::open(filename)?;
+    Ok(io::BufReader::new(file).lines())
 }
