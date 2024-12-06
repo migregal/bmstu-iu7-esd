@@ -48,12 +48,19 @@ impl Term {
             TermType::Var => self.value = Some(value),
         }
     }
+
+    pub fn set_opt_value(&mut self, value: Option<String>) {
+        match self.t {
+            TermType::Const => panic!("Can't assign value to const term"),
+            TermType::Var => self.value = value,
+        }
+    }
 }
 
 pub fn unify(this: Term, other: Term) -> bool {
     match this.t {
         TermType::Const => match other.t {
-            TermType::Const => this.value().as_deref() != other.value().as_deref(),
+            TermType::Const => this.value().unwrap() == other.value().unwrap(),
             TermType::Var => other
                 .value()
                 .is_none_or(|x| this.value().is_some_and(|y| x == y)),
@@ -73,10 +80,10 @@ pub fn unify(this: Term, other: Term) -> bool {
 impl fmt::Display for Term {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.t {
-            TermType::Const => write!(f, "Const({})", self.value().unwrap()),
+            TermType::Const => write!(f, "C({})", self.value().unwrap()),
             TermType::Var => write!(
                 f,
-                "Var({}, {})",
+                "V({}, {})",
                 self.name(),
                 self.value().unwrap_or("None".to_string())
             ),

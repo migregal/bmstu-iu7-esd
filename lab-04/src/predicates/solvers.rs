@@ -2,7 +2,7 @@ use super::values::term;
 
 pub mod storage;
 
-pub mod unification;
+pub mod resolution;
 
 pub trait TermsStorage {
     fn get_term(&self, name: String) -> term::Term;

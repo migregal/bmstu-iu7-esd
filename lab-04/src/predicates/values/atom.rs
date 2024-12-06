@@ -12,18 +12,10 @@ pub struct Atom {
 }
 
 impl Atom {
-    pub fn new(name: String, terms: Vec<String>) -> Atom {
+    pub fn new(name: String, is_neg: bool, terms: Vec<String>) -> Atom {
         return Atom {
             name,
-            is_neg: false,
-            terms,
-        };
-    }
-
-    pub fn new_negative(name: String, terms: Vec<String>) -> Atom {
-        return Atom {
-            name,
-            is_neg: true,
+            is_neg,
             terms,
         };
     }
@@ -42,10 +34,7 @@ impl Atom {
 }
 
 pub fn unify(storage: &mut dyn solvers::TermsStorage, this: Atom, other: Atom) -> bool {
-    if this.name() != other.name()
-        || this.terms.len() != other.terms.len()
-        || this.is_neg != other.is_neg
-    {
+    if this.name() != other.name() || this.terms.len() != other.terms.len() {
         return false;
     }
 
@@ -59,7 +48,6 @@ pub fn unify(storage: &mut dyn solvers::TermsStorage, this: Atom, other: Atom) -
     {
         let t2 = tuple.clone();
         let unified = term::unify(tuple.0, tuple.1);
-        // println!("{:?}={}", t2, unified);
 
         if !unified {
             return false;
@@ -75,6 +63,15 @@ pub fn unify(storage: &mut dyn solvers::TermsStorage, this: Atom, other: Atom) -
 
 impl fmt::Display for Atom {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Atom({}: {:?})", self.name(), self.terms)
+        write!(
+            f,
+            "{}{}{:?}",
+            match self.is_neg() {
+                true => "~",
+                false => "",
+            },
+            self.name(),
+            self.terms
+        )
     }
 }

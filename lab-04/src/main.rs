@@ -6,20 +6,27 @@ use capitalize::Capitalize;
 
 pub mod predicates;
 
-use predicates::solvers::{storage, unification};
-use predicates::values::{atom::Atom, term};
+use predicates::solvers::{resolution, storage};
+use predicates::values::atom;
+use predicates::values::{atom::Atom, disjunct, term};
 
 fn main() {
     let storage = get_knowledge("./input.txt");
 
-    let mut solver = unification::Solver::new(storage);
+    let mut solver = resolution::Solver::new(storage);
 
-    let (a, b) = (
-        Atom::new("L".to_string(), vec!["x1".to_string(), "x2".to_string()]),
-        Atom::new("L".to_string(), vec!["Petya".to_string(), "y1".to_string()]),
-    );
-
-    let res = solver.solve(a, b);
+    solver.solve(disjunct::Disjunct::new(vec![
+        atom::Atom::new(
+            "L".to_string(),
+            true,
+            vec!["Лена".to_string(), "Снег".to_string()],
+        ),
+        atom::Atom::new(
+            "L".to_string(),
+            false,
+            vec!["Лена".to_string(), "Дождь".to_string()],
+        ),
+    ]));
 }
 
 fn get_knowledge(fin: &str) -> storage::Storage {
@@ -31,6 +38,8 @@ fn get_knowledge(fin: &str) -> storage::Storage {
                 .split("|")
                 .map(|s| s.to_string().trim().to_string())
                 .into_iter();
+
+            let mut atoms = Vec::<atom::Atom>::new();
 
             for mut expr in exprs {
                 let is_neg = expr.starts_with("~");
@@ -59,12 +68,12 @@ fn get_knowledge(fin: &str) -> storage::Storage {
                     }
                 }
 
-                if is_neg {
-                    storage.add_atom(Atom::new_negative(name, terms));
-                } else {
-                    storage.add_atom(Atom::new(name, terms));
-                }
+                let atom = Atom::new(name, is_neg, terms);
+                storage.add_atom(atom.clone());
+                atoms.push(atom);
             }
+
+            storage.add_disjunct(disjunct::Disjunct::new(atoms));
         }
     }
 

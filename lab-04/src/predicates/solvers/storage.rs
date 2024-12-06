@@ -3,12 +3,14 @@ use std::fmt;
 use std::collections::{HashMap, HashSet, LinkedList};
 
 use crate::predicates::solvers;
-use crate::predicates::values::{atom, term};
+use crate::predicates::values::{atom, disjunct, term};
 
 pub struct Storage {
     terms: HashMap<String, TermInfo>,
 
-    atoms: HashMap<String, LinkedList<atom::Atom>>,
+    atoms: HashMap<String, LinkedList<atom::Atom>>, // actually unused for now
+
+    disjuncts: LinkedList<disjunct::Disjunct>,
 }
 
 impl Storage {
@@ -16,6 +18,7 @@ impl Storage {
         return Storage {
             terms: HashMap::new(),
             atoms: HashMap::new(),
+            disjuncts: LinkedList::new(),
         };
     }
 
@@ -29,7 +32,7 @@ impl Storage {
         self.terms.insert(
             key,
             TermInfo {
-                term: term,
+                term,
                 linked_terms: HashSet::new(),
             },
         );
@@ -43,6 +46,10 @@ impl Storage {
             Some(x) => x.push_back(atom.to_owned()),
             None => _ = self.atoms.insert(key, LinkedList::from([atom])),
         }
+    }
+
+    pub fn add_disjunct(&mut self, disjunct: disjunct::Disjunct) {
+        self.disjuncts.push_back(disjunct.to_owned())
     }
 
     pub fn print_atoms(&self, a: atom::Atom, b: atom::Atom) {
@@ -62,6 +69,10 @@ impl Storage {
             }
         }
     }
+
+    pub fn get_disjuncts(&self) -> LinkedList<disjunct::Disjunct> {
+        return self.disjuncts.clone();
+    }
 }
 
 impl solvers::TermsStorage for Storage {
@@ -70,6 +81,11 @@ impl solvers::TermsStorage for Storage {
     }
 
     fn link_terms(&mut self, from: String, to: String) -> bool {
+        if from == to {
+            return true;
+        }
+
+        println!("link for: {}, {}", from, to);
         if !self.terms.contains_key(&from) || !self.terms.contains_key(&to) {
             return false;
         }
@@ -92,36 +108,46 @@ impl solvers::TermsStorage for Storage {
             term::TermType::Const => {
                 match b.term.t() {
                     // this means, that consts are the same
-                    term::TermType::Const => {}
-                    term::TermType::Var => b.term.set_value(a.term.value().unwrap().to_string()),
+                    term::TermType::Const => {
+                        self.terms.insert(from, a.clone());
+                    }
+                    term::TermType::Var => {
+                        b.term.set_value(a.term.value().unwrap().to_string());
+
+                        self.terms.insert(from, a.clone());
+                        self.terms.insert(to, b.clone());
+                    }
                 }
             }
-            term::TermType::Var => match b.term.t() {
-                term::TermType::Const => a.term.set_value(b.term.value().unwrap().to_string()),
-                term::TermType::Var => {
-                    let linked_terms: HashSet<String> = a
-                        .linked_terms
-                        .union(&b.linked_terms)
-                        .map(|x| x.to_string())
-                        .collect();
+            term::TermType::Var => {
+                match b.term.t() {
+                    term::TermType::Const => a.term.set_value(b.term.value().unwrap().to_string()),
+                    term::TermType::Var => {
+                        let linked_terms: HashSet<String> = a
+                            .linked_terms
+                            .union(&b.linked_terms)
+                            .map(|x| x.to_string())
+                            .collect();
 
-                    a.linked_terms = linked_terms
-                        .clone()
-                        .into_iter()
-                        .filter(|x| *x != from)
-                        .collect();
-                    a.linked_terms.insert(to.clone());
+                        a.linked_terms = linked_terms
+                            .clone()
+                            .into_iter()
+                            .filter(|x| *x != from)
+                            .collect();
+                        a.linked_terms.insert(to.clone());
 
-                    b.linked_terms = linked_terms.into_iter().filter(|x| *x != to).collect();
-                    b.linked_terms.insert(from.clone());
+                        b.linked_terms = linked_terms.into_iter().filter(|x| *x != to).collect();
+                        b.linked_terms.insert(from.clone());
+
+                        a.term.set_opt_value(b.term.value());
+                        b.term.set_opt_value(a.term.value());
+                    }
                 }
-            },
+
+                self.terms.insert(from, a.clone());
+                self.terms.insert(to, b.clone());
+            }
         }
-
-        // println!("{:?} {:?}", a, b);
-
-        self.terms.insert(from, a.clone());
-        self.terms.insert(to, b.clone());
 
         true
     }
