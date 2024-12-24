@@ -1,0 +1,8 @@
+[package]
+name = "lab-04"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+capitalize = "0.3.4"
+derive_more = { version = "1.0.0", features = ["constructor"] }
